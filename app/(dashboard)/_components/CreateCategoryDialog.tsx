@@ -40,8 +40,13 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createCategory } from "../_actions/categories";
 import { Category } from "@prisma/client";
 import { toast } from "sonner";
+import { useTheme } from "next-themes";
 
-function CreateCategoryDialog({ type }: { type: TransactionType }) {
+interface Props {
+  type: TransactionType;
+  successCallback: (category: Category) => void;
+}
+function CreateCategoryDialog({ type, successCallback }: Props) {
   const [open, setOpen] = useState(false);
 
   const form = useForm<CreateCategorySchemaType>({
@@ -52,6 +57,7 @@ function CreateCategoryDialog({ type }: { type: TransactionType }) {
   });
 
   const queryClient = useQueryClient();
+  const theme = useTheme();
 
   const { mutate, isPending } = useMutation({
     mutationFn: createCategory,
@@ -61,6 +67,8 @@ function CreateCategoryDialog({ type }: { type: TransactionType }) {
       toast.success(`Category ${data.name} created successfully`, {
         id: "create-category",
       });
+
+      successCallback(data);
 
       await queryClient.invalidateQueries({ queryKey: ["categories"] });
 
@@ -129,7 +137,7 @@ function CreateCategoryDialog({ type }: { type: TransactionType }) {
                     <Input defaultValue={""} {...field} />
                   </FormControl>
                   <FormDescription>
-                    Transaction description (optional)
+                    This is how your category will appear in the app
                   </FormDescription>
                 </FormItem>
               )}
@@ -170,6 +178,7 @@ function CreateCategoryDialog({ type }: { type: TransactionType }) {
                       <PopoverContent className="w-full">
                         <Picker
                           data={data}
+                          theme={theme.resolvedTheme}
                           onEmojiSelect={(emoji: { native: string }) => {
                             field.onChange(emoji.native);
                           }}

@@ -3,7 +3,7 @@
 import { TransactionType } from "@/lib/types";
 import { Category } from "@prisma/client";
 import { useQuery } from "@tanstack/react-query";
-import React from "react";
+import React, { useCallback, useEffect } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Button } from "./ui/button";
 import {
@@ -18,9 +18,19 @@ import CreateCategoryDialog from "@/app/(dashboard)/_components/CreateCategoryDi
 import { Check, ChevronsUpDown } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function CategoryPicker({ type }: { type: TransactionType }) {
+interface Props {
+  type: TransactionType;
+  onChange: (value: string) => void;
+}
+
+function CategoryPicker({ type, onChange }: Props) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
+
+  useEffect(() => {
+    if (!value) return;
+    onChange(value);
+  }, [onChange, value]);
 
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
@@ -30,6 +40,14 @@ function CategoryPicker({ type }: { type: TransactionType }) {
 
   const selectedCategory = categoriesQuery.data?.find(
     (category: Category) => category.name === value
+  );
+
+  const successCallback = useCallback(
+    (category: Category) => {
+      setValue(category.name);
+      setOpen((prev) => !prev);
+    },
+    [setValue, setOpen]
   );
 
   return (
@@ -54,7 +72,7 @@ function CategoryPicker({ type }: { type: TransactionType }) {
       <PopoverContent className="w-[200px] p-0">
         <Command onSubmit={(e) => e.preventDefault()}>
           <CommandInput placeholder="Search category..." />
-          <CreateCategoryDialog type={type} />
+          <CreateCategoryDialog type={type} successCallback={successCallback} />
           <CommandEmpty>
             <p>Category not found.</p>
             <p className="text-xs text-muted-foreground">
